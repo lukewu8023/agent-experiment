@@ -1,0 +1,1 @@
+CODE_GENERATION_PROMPT = "\nContext is invisible for me, so put all needed context information into your response and provide implementation code as detailed as possible."
