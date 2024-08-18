@@ -29,7 +29,7 @@ class LLMChat:
         else:
             model = Config.OPENAI_MODEL_BASIC
 
-        self.chat = ChatOpenAI(model=model, temperature=0.1, max_tokens=4096, verbose=True)
+        self.chat = ChatOpenAI(model=model, temperature=0.1, max_tokens=4096, openai_proxy=Config.OPENAI_PROXY,verbose=True)
         self.chat_history_for_chain = ChatMessageHistory()
 
     def one_time_respond(self, request):
