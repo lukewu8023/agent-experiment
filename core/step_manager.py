@@ -16,6 +16,9 @@ class Step:
 
     def __repr__(self):
         return f"Step(name='{self.name}', description='{self.description}', sub_steps={self.sub_steps})"
+    
+    def __str__(self):
+        return f"{self.name}: {self.description}"
 
 
 class StepManager:
