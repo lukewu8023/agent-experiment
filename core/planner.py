@@ -3,7 +3,7 @@ import json
 from core.llm_chat import LLMChat
 from core.step_manager import Step
 
-from prompt.plan import PLAN_FORMAT,RE_PLAN_FORMAT
+from prompt.plan import PLAN_FORMAT,RE_PLAN_FORMAT,LOW_LEVEL_PLANNER_FORMAT
 
 class Planner:
 
@@ -51,3 +51,22 @@ class Planner:
             step = Step(step_data["step_name"], step_data["step_description"])
             self.steps.append(step)
         return self.steps
+
+
+    def low_level_plan(self,request, step:Step,tools):
+        tool_descriptions="\n".join([f"{tool.name}: {tool.description}" for tool in tools])
+        prompt=LOW_LEVEL_PLANNER_FORMAT.format(request=request,step=step,tools=tool_descriptions)
+        
+        chat = LLMChat()
+        
+        response = chat.one_time_respond(prompt).replace("```json", '').replace("```", '')
+        steps_data = json.loads(response)["steps"]
+
+        sub_steps=[]
+
+        for step_data in steps_data:
+            sub_step = Step(step_data["step_name"], step_data["step_description"])
+            sub_steps.append(sub_step)
+
+        step.add_sub_steps(sub_steps)
+        return step

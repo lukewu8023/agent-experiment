@@ -8,7 +8,7 @@ class Step:
         self.sub_steps.append(sub_step)
 
     def add_sub_steps(self, sub_steps):
-        self.sub_steps.append(sub_steps)
+        self.sub_steps+=sub_steps
         
     def remove_sub_step(self, sub_step):
         if sub_step in self.sub_steps:

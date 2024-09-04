@@ -1,11 +1,12 @@
 import re
 
-from core.llm_chat import LLMChat
+from core.llm_chat import LLMChat,ReActBot
 from core.context_manager import ContextManager
 from core.planner import Planner
 
 from prompt.build_web_app import BUILD_WEB_APP_KNOWLEDGE
 from prompt.coding import CODE_GENERATION_PROMPT
+import core.tools as T
 
 def run():
     print("Build web application...")
@@ -15,10 +16,13 @@ def run():
     planner = Planner()
     background = "You are a web developer, always deliver best quality web application"
     knowledge = BUILD_WEB_APP_KNOWLEDGE
-    steps = planner.plan(request, background=background, knowledge=knowledge)
+    steps = planner.plan(request, background=background)
 
     chat = LLMChat()
+
     context_manager = ContextManager()
+    tools=[T.save_code_to_file,T.execute_command_line,T.human_for_help,T.write_code]
+    react_chat=ReActBot(tools=tools)
 
     index=1
 
@@ -28,12 +32,31 @@ def run():
 
         step=steps.pop(0)
 
-        context_response = chat.context_respond(context_manager.context_to_str(), step.description)
+        context_response = react_chat.invoke(query=step.description)
         step_number = f"Step {index}"
-        context = f"{context_response['messages'][0]}: \n{context_response['answer']}"
+        context = f"{step.description}: \n{context_response}"
         context_manager.add_context(step_number, context)
 
-        steps=planner.replan(request, context_manager.context_to_str(),background=background, knowledge=knowledge)
+        steps=planner.replan(request, context_manager.context_to_str(),background=background)
+
+
+
+        # step_with_substeps=planner.low_level_plan(request, step,tools)
+
+        # sub_steps=step_with_substeps.sub_steps
+
+        # sub_index=1
+        # while len(sub_steps)>0:
+        #     sub_step=sub_steps[0]
+        #     context_response = react_chat.invoke(query=sub_step.description)
+        #     step_number = f"Step {index}.{sub_index}"
+        #     context = f"{sub_step.description}: \n{context_response}"
+        #     context_manager.add_context(step_number, context)
+
+        #     original_plan="\n".join(str(step) for step in sub_steps)
+        #     sub_steps=planner.replan(request, context_manager.context_to_str(),original_plan=original_plan,background=request)
+
+        #     sub_index+=1
 
         index +=1
 
