@@ -48,7 +48,7 @@ class ReActBot(object):
 
         self.prompt = PromptTemplate(
         template=SYSTEM_CONTEXT_WITH_TOOLS2,
-            input_variables=["input", "agent_scratchpad"],
+            input_variables=["input", "agent_scratchpad","history_message"],
             partial_variables={
                 "tool_names": ", ".join([tool.name for tool in self.tools]),
                 "tool_descriptions": "\n".join(
@@ -63,16 +63,22 @@ class ReActBot(object):
     def invoke(self,query):
 
         finished=False
-        final_answer=""
 
         while not finished:
         
             agent_scratchpad=self._build_agent_scratchpad()
-            response=self.agent.invoke({"input":query,"agent_scratchpad":agent_scratchpad})
+            response=self.agent.invoke({"input":query,"agent_scratchpad":agent_scratchpad,"history_message":"\n".join(self.messages)})
 
             if isinstance(response,str):
                 finished=True
-                final_answer=response
+
+                current_message=f"""Command: {query}
+{agent_scratchpad}
+Final Answer: {response}
+"""
+                self.messages.append(current_message)
+
+                self.intermediate_steps=[]
             elif isinstance(response,Action):
                 observation=self.execute_action(response)
                 response.oberservation=observation
@@ -87,7 +93,7 @@ class ReActBot(object):
                 result=tool.invoke(input_dict)
                 return result
         
-        return Exception(f"Not Found tool :{action.name}")
+        return f"Not Found tool :{action.action}"
     
     def _build_agent_scratchpad(self):
         outputs=[]

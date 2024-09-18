@@ -2,7 +2,9 @@ from langchain_core.tools import Tool,tool
 from typing import Annotated, List
 from core.llm_chat import LLMChat
 import subprocess
-
+import time
+import os
+import select
 
 
 @tool
@@ -13,16 +15,20 @@ def save_code_to_file(code:Annotated[str,"Complete code save to one file"],
     print("Code:",code)
     print("File Path:",file_path)
 
-    with open(file_path,"w",encoding="utf-8") as f:
-        f.write(code)
+    try:
+        with open(file_path,"w",encoding="utf-8") as f:
+            f.write(code)
+    except Exception as e:
+        return f"save code to file failed: {e}"
 
-    return f"code has been successfully saved to {file_path}"
-
+    return f"code has been successfully saved to {os.path.abspath(file_path)}"
 
 @tool
-def execute_command_line(shell_command:Annotated[list[str],"Shell command to be executed in python subprocess"],
-                         is_run_asynchronously:Annotated[bool,"if yes, use Popen without waiting for it to complete. If no, use run, wait for finish and return"]):
-    """Execute the command by python's subprocess.Popen or subprocess.run based on  is_run_asynchronously and get the response. """
+def execute_command_line(shell_command:Annotated[str,"Shell command to be executed in python subprocess"],
+                         is_run_asynchronously:Annotated[bool,"if true, use subprocess.Popen without waiting for it to complete. If no, use subprocess.run, wait for finish and return"]):
+    """Execute the command by python's subprocess.Popen or subprocess.run based on is_run_asynchronously and get the response. 
+is_run_asynchronously is usefull when the command should keep running in background. 
+Note only each execution is in the same session, the session will end after exit"""
     print("Tool: execute_command_line")
     print("Command:",shell_command)
     print("is_run_asynchronously:",is_run_asynchronously)
@@ -32,17 +38,29 @@ def execute_command_line(shell_command:Annotated[list[str],"Shell command to be 
             shell_command,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            text=True
+            text=True,
+            shell=True
             )
+        
+        time.sleep(10) # sleep a period before checking error
+        stdout_ready, stderr_ready, _ = select.select([process.stdout], [process.stderr], [], 0)
 
-        # Immediately return the process object to interact with stdout and stderr later
-        stdout, stderr = process.communicate(timeout=5)
-        response=f"stdout: {stdout}\n stderr: {stderr}"
+        if stderr_ready:
+            stderr_output = process.stderr.read()
+            return f"stderr: {stderr_output}"
+        else:
+            response="No immediate errors. Process continues running in the background.The PID is: {process.pid}"
        
 
     else:
-        result = subprocess.run(shell_command, capture_output=True, text=True)
-        response=f"stdout: {result.stdout}\n stderr: {result.stderr}"
+        try:
+            result = subprocess.run(shell_command, capture_output=True, text=True,shell=True,timeout=5*60)
+            response=f"stdout: {result.stdout}\n stderr: {result.stderr}"
+
+        except subprocess.TimeoutExpired as e:
+            response="The command took too long and was terminated. Should the command run in async?"
+            e.process.kill()  # Kill the process
+            e.process.wait()  # Wait for it to terminate
 
     
 
@@ -77,8 +95,8 @@ def write_code(language:Annotated[str,"the coding language"],
 
 @tool
 def human_for_help(action:Annotated[str,"description of action that need human to do manully"]):
-    """You can always ask human for assistant to complete one single action such as: download a file, install a software...
-    You need to provide the action instruction"""
+    """You can ask human for assistant to complete one single action such as: download a file, install a software...
+    You need to provide the action instruction. Only ask human for assistant when is nessasary."""
 
     print("Tool: human_for_help")
     print("action:",action)

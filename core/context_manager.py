@@ -2,7 +2,7 @@ class ContextManager:
 
     def __init__(self):
         self.context = {}
-
+        
     def get_context(self):
         return self.context
 
@@ -22,12 +22,13 @@ class ContextManager:
             print(f"Key '{key}' not found in context.")
 
     def context_to_str(self):
-        contextStr = "<context>\n"
+        # contextStr = "<context>\n"
+        contextStr=""
         for key, value in self.context.items():
             contextStr += f"<{key}>\n{value}\n</{key}>\n"
-        contextStr += "</context>"
+        # contextStr += "</context>"
         return contextStr
 
     def print_context(self):
         print(f"Here is the context:")
-        print(self.contextToString())
+        print(self.context_to_str())
