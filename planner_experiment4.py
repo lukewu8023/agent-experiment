@@ -12,18 +12,21 @@ import core.tools as T
 def run():
     print("Build web application...")
 
-    request = "Build a react web application, click button will popup hello world on the screen."
+    #request = "Build a react web application, click button will popup hello world on the screen."
+    background = "You are a full stack developer, always deliver best quality web application."
+    request = """Use python to build a web application, click button will popup current time on the screen. The current time should be obtained from backend python service. """
 
-    planner = Planner()
-    background = "You are a web developer, always deliver best quality web application."
+    
+    chat = LLMChat(model_type = 'BASIC')
+
+    planner = Planner(chat)
     knowledge = BUILD_WEB_APP_KNOWLEDGE
     steps:Step = planner.plan(request, background=background,knowledge="")
 
-    chat = LLMChat()
 
     context_manager = ContextManager()
-    tools=[T.save_code_to_file,T.execute_command_line,T.human_for_help,T.write_code]
-    react_chat=ReActBot(tools=tools)
+    tools=[T.save_code_to_file,T.read_code_from_file,T.execute_command_line,T.write_code,T.modify_code]
+    react_chat=ReActBot(tools=tools,model_type = 'BASIC')
 
     index=1
 
@@ -31,7 +34,6 @@ def run():
 
     while len(steps)>0:
 
-        # TODO: use tool to get result
 
         step=steps.pop(0)
 
@@ -69,9 +71,9 @@ def run():
 
 
 
-    response = chat.context_respond(context_manager.context_to_str(), request+CODE_GENERATION_PROMPT)
+    # response = chat.context_respond(context_manager.context_to_str(), request+CODE_GENERATION_PROMPT)
 
-    return response
+    # return response
 
 def extract_steps(plan_string):
     # Define an empty list to store the steps

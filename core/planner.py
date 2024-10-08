@@ -1,15 +1,15 @@
 import json
 
-from core.llm_chat import LLMChat
 from core.step_manager import Step
 
 from prompt.plan import PLAN_FORMAT,RE_PLAN_FORMAT,LOW_LEVEL_PLANNER_FORMAT,REVIEW_FORMAT
 
 class Planner:
 
-    def __init__(self):
+    def __init__(self,chat):
         self.history_steps=[]
         self.steps = []
+        self.chat=chat
 
     def plan(self, request, background="",knowledge=""):
 
@@ -17,10 +17,8 @@ class Planner:
             knowledge=f"<knowledge>\n{knowledge}\n</knowledge>\n"
 
         sys_prompt=PLAN_FORMAT.format(background=background,knowledge=knowledge)
-            
-        chat = LLMChat()
-        
-        response = chat.prompt_respond(request, sys_prompt).replace("```json", '').replace("```", '')
+                    
+        response = self.chat.prompt_respond(request, sys_prompt).replace("```json", '').replace("```", '')
         steps_data = json.loads(response)["steps"]
         for i,step_data in enumerate(steps_data):
             step = Step(i+1,step_data["step_name"], step_data["step_description"])
@@ -30,20 +28,16 @@ class Planner:
     def replan(self,request, completed_steps:list[Step], background="",knowledge=""):
 
 
-
-
         if knowledge:
             knowledge=f"<knowledge>\n{knowledge}\n</knowledge>\n"
 
         original_plan_str="\n".join(str(step) for step in self.steps)
         completed_steps_str="\n".join([step.get_context_str() for step in completed_steps])
 
-        chat = LLMChat()
-
 
         critiqe_prompt=REVIEW_FORMAT.format(request=request,
                                 original_plan=original_plan_str,completed_steps=completed_steps_str)
-        critique_response=chat.one_time_respond(critiqe_prompt)
+        critique_response=self.chat.one_time_respond(critiqe_prompt)
 
 
 
@@ -52,7 +46,7 @@ class Planner:
         
         
         
-        response = chat.one_time_respond(prompt).replace("```json", '').replace("```", '')
+        response = self.chat.one_time_respond(prompt).replace("```json", '').replace("```", '')
         steps_data = json.loads(response)["steps"]
 
         self.history_steps.append(self.steps)
@@ -72,9 +66,8 @@ class Planner:
         tool_descriptions="\n".join([f"{tool.name}: {tool.description}" for tool in tools])
         prompt=LOW_LEVEL_PLANNER_FORMAT.format(request=request,step=step,tools=tool_descriptions)
         
-        chat = LLMChat()
         
-        response = chat.one_time_respond(prompt).replace("```json", '').replace("```", '')
+        response = self.chat.one_time_respond(prompt).replace("```json", '').replace("```", '')
         steps_data = json.loads(response)["steps"]
 
         sub_steps=[]

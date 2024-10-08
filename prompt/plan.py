@@ -17,6 +17,7 @@ REVIEW_FORMAT="""You task is to give critiques for current plan given an objecti
 Given the objective and response of completed steps, review the original plan and provide criteques for following two points only. Don't provide revised steps!
 1) what is different between the last completed step and the original plan
 2) suggestion about how to change the REMAINING plan based on completed steps.Ensure the steps should be able to execute by AI assistant not human.
+If you think no remaining step required, just say so.
 
 <objective>
 

@@ -5,6 +5,23 @@ import subprocess
 import time
 import os
 import select
+import signal
+import fcntl
+
+
+@tool
+def read_code_from_file(file_path:Annotated[str,"file path to save the code"]):
+    """Read code in given file"""
+    print("Tool: read_code_from_file")
+    print("File Path:",file_path)
+
+    try:
+        with open(file_path,"r",encoding="utf-8") as f:
+            code=f.read()
+    except Exception as e:
+        return f"read code from file failed: {e}"
+
+    return code
 
 
 @tool
@@ -23,6 +40,10 @@ def save_code_to_file(code:Annotated[str,"Complete code save to one file"],
 
     return f"code has been successfully saved to {os.path.abspath(file_path)}"
 
+def set_nonblocking(fd):
+    flags = fcntl.fcntl(fd, fcntl.F_GETFL)
+    fcntl.fcntl(fd, fcntl.F_SETFL, flags | os.O_NONBLOCK)
+
 @tool
 def execute_command_line(shell_command:Annotated[str,"Shell command to be executed in python subprocess"],
                          is_run_asynchronously:Annotated[bool,"if true, use subprocess.Popen without waiting for it to complete. If no, use subprocess.run, wait for finish and return"]):
@@ -33,34 +54,47 @@ Note only each execution is in the same session, the session will end after exit
     print("Command:",shell_command)
     print("is_run_asynchronously:",is_run_asynchronously)
 
-    if is_run_asynchronously:
-        process = subprocess.Popen(
+
+    process = subprocess.Popen(
             shell_command,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
-            shell=True
+            shell=True,
+            preexec_fn=os.setsid
             )
-        
+
+    if is_run_asynchronously:
+        set_nonblocking(process.stdout)
+        set_nonblocking(process.stderr)
+       
         time.sleep(10) # sleep a period before checking error
         stdout_ready, stderr_ready, _ = select.select([process.stdout], [process.stderr], [], 0)
-
+        
         if stderr_ready:
-            stderr_output = process.stderr.read()
-            return f"stderr: {stderr_output}"
+            stderr = process.stderr.read(1024)
+            stdout = process.stdout.read(1024)
+            return f"stdout: {stdout}\n stderr: {stderr} The PID is: {process.pid}"
         else:
             response="No immediate errors. Process continues running in the background.The PID is: {process.pid}"
        
 
     else:
         try:
-            result = subprocess.run(shell_command, capture_output=True, text=True,shell=True,timeout=5*60)
-            response=f"stdout: {result.stdout}\n stderr: {result.stderr}"
-
-        except subprocess.TimeoutExpired as e:
+            # Poll the process for completion and set a timeout
+            stdout, stderr = process.communicate(timeout=5*60)
+            response=f"stdout: {stdout}\n stderr: {stderr}"
+            
+        except subprocess.TimeoutExpired:
             response="The command took too long and was terminated. Should the command run in async?"
-            e.process.kill()  # Kill the process
-            e.process.wait()  # Wait for it to terminate
+            os.killpg(os.getpgid(process.pid), signal.SIGTERM)  # Send SIGTERM to the process group
+            
+            # Kill the process
+            process.kill()
+            
+            # Wait for the process to terminate
+            process.wait()
+            
 
     
 
@@ -87,11 +121,35 @@ def write_code(language:Annotated[str,"the coding language"],
 
     llm=LLMChat()
     system_prompt=f"""You are a {language} developer. Write code based on user's query. 
-    You must output the code only and use comments to explain the code."""
+You must output the code only and use comments to explain the code."""
     response=llm.prompt_respond(task, system_prompt)
 
     return response
 
+@tool
+def modify_code(language:Annotated[str,"the coding language"],
+                file_path:Annotated[str,"file path of current code"],
+                task:Annotated[str,"description of task the code need to achive"]):
+    """Modify current code with given language to accomplish the task"""
+
+    print("Tool: modify_code")
+    print("file_path:",file_path)
+    print("language:",language)
+    print("task:",task)
+
+    current_code=read_code_from_file(file_path)
+
+    llm=LLMChat()
+    system_prompt=f"""You are a {language} developer. Modify code based on user's query. 
+You must output the complete code only and use comments to explain the code.
+
+<current_code>
+{current_code}
+</current_code>
+"""
+    response=llm.prompt_respond(task, system_prompt)
+
+    return response
 
 @tool
 def human_for_help(action:Annotated[str,"description of action that need human to do manully"]):

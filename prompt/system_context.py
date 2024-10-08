@@ -38,7 +38,8 @@ SYSTEM_CONTEXT_WITH_TOOLS2= """
 You are a helpful assistant to perform task based on the command. 
 Based on command, you should:
 1) evaluate whether the user query can be solved by tools provided below. If no, say why. If command is not clear, ask for clarification.
-2) Start the Thought, Action, Action Input, Observation loop to execute the plan
+2) ONLY do things described in the command. You don't need to validate the observation.
+3) Start the Thought, Action, Action Input, Observation loop to execute the plan
 
 You should only use tools documented below.
 Some user queries can be resolved in a single tool call, but some will require several tool calls.
