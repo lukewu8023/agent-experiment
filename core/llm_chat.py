@@ -63,26 +63,40 @@ class ReActBot(object):
     def invoke(self,query):
 
         finished=False
+        retry=0
 
-        while not finished:
+        while retry<3 and (not finished):
+            try:
+                agent_scratchpad=self._build_agent_scratchpad()
+                response=self.agent.invoke({"input":query,"agent_scratchpad":agent_scratchpad,"history_message":"\n".join(self.messages)})
+
+                if isinstance(response,str):
+                    finished=True
+
+                    current_message=f"""Command: {query}
+    {agent_scratchpad}
+    Final Answer: {response}
+    """
+                    self.messages.append(current_message)
+
+                    self.intermediate_steps=[]
+                elif isinstance(response,Action):
+                    try:
+                        observation=self.execute_action(response)
+                        response.oberservation=observation
+                        self.intermediate_steps.append(response)
+                    except Exception as e:
+                        pass
+                    
+                else:
+                    retry+=1
+
+            except Exception as e:
+                print("Generate failed, retry.",str(e))
+                retry+=1
         
-            agent_scratchpad=self._build_agent_scratchpad()
-            response=self.agent.invoke({"input":query,"agent_scratchpad":agent_scratchpad,"history_message":"\n".join(self.messages)})
-
-            if isinstance(response,str):
-                finished=True
-
-                current_message=f"""Command: {query}
-{agent_scratchpad}
-Final Answer: {response}
-"""
-                self.messages.append(current_message)
-
-                self.intermediate_steps=[]
-            elif isinstance(response,Action):
-                observation=self.execute_action(response)
-                response.oberservation=observation
-                self.intermediate_steps.append(response)
+        if retry>=3:
+            response="The step cannot be executed correctly."
 
         return response
     
@@ -93,7 +107,7 @@ Final Answer: {response}
                 result=tool.invoke(input_dict)
                 return result
         
-        return f"Not Found tool :{action.action}"
+        raise Exception("Not Found tool :{action.action}")
     
     def _build_agent_scratchpad(self):
         outputs=[]
@@ -138,6 +152,13 @@ class LLMChat:
 
         self.chat = ChatOpenAI(model=model, temperature=0.1, max_tokens=4096, openai_proxy=Config.OPENAI_PROXY,verbose=True)
         self.chat_history_for_chain = ChatMessageHistory()
+
+    def one_time_respond_str(self, prompt):
+ 
+        output_parser = StrOutputParser()
+        chain = self.chat | output_parser
+        response = chain.invoke(prompt)
+        return response
 
     def one_time_respond(self, request):
         prompt = ChatPromptTemplate.from_messages(

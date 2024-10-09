@@ -39,7 +39,8 @@ You are a helpful assistant to perform task based on the command.
 Based on command, you should:
 1) evaluate whether the user query can be solved by tools provided below. If no, say why. If command is not clear, ask for clarification.
 2) ONLY do things described in the command. You don't need to validate the observation.
-3) Start the Thought, Action, Action Input, Observation loop to execute the plan
+3) You must summary intermediate actions and detail the final output in final answer.
+4) Start the Thought, Action, Action Input, Observation loop to execute the plan
 
 You should only use tools documented below.
 Some user queries can be resolved in a single tool call, but some will require several tool calls.
@@ -56,11 +57,23 @@ Action Input: the input to the action. Should be in valid json format
 Observation: the output of the action
 ... (this Thought/Action/Action Input/Observation can repeat N times)
 Thought: I am finished executing the plan (or, I cannot finish executing the plan without knowing some other information.)
-Final Answer: the final output from executing the plan(summary for intermediate actions and final output) or the step can not be excuted need re-plan.  Output in one line.
+Final Answer: the final output from executing the plan(summary intermediate actions and detail the final output) or the step can not be excuted need re-plan.  Output in one line.
 
 Begin!
 
 {history_message}
 Command: {input}
 Thought:{agent_scratchpad}
+"""
+
+
+VALIDATOR_PROMPT="""Your task is to design a validation task given query and response.
+You should output the detailed description in plain text of how to validate the given query.
+
+Query:
+{query}
+
+Response:
+{response}
+
 """

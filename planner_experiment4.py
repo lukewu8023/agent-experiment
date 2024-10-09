@@ -14,7 +14,9 @@ def run():
 
     #request = "Build a react web application, click button will popup hello world on the screen."
     background = "You are a full stack developer, always deliver best quality web application."
-    request = """Use python to build a web application, click button will popup current time on the screen. The current time should be obtained from backend python service. """
+    request1 = """Use python to build a web application, click button will popup current time on the screen. The current time should be obtained from backend python service. """
+    request = """modify code in app.py and static. add an input box on the page to accept user's name. after click button, the popup should display username and current time"""
+
 
     
     chat = LLMChat(model_type = 'BASIC')
@@ -40,6 +42,9 @@ def run():
         step_response = react_chat.invoke(query=step.description)
 
         step.add_response(step_response)
+
+        # TODO: add validator
+        
 
         completed_steps.append(step)
 

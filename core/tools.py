@@ -141,13 +141,15 @@ def modify_code(language:Annotated[str,"the coding language"],
 
     llm=LLMChat()
     system_prompt=f"""You are a {language} developer. Modify code based on user's query. 
-You must output the complete code only and use comments to explain the code.
+You must output the complete code.Output the code only and use comments to explain the code. Don't include anything else.
 
 <current_code>
 {current_code}
 </current_code>
+
+{task}
 """
-    response=llm.prompt_respond(task, system_prompt)
+    response=llm.one_time_respond_str( system_prompt)
 
     return response
 

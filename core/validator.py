@@ -61,3 +61,12 @@ If yes, output string 'yes', if no or response contains further questions or ref
                 response: Annotated[str, AfterValidator(_arguments_not_match)]
 
         Response.model_validate({'response': response})
+
+
+
+
+
+class Validator(object):
+
+    def __init__():
+        pass
