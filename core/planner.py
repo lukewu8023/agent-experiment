@@ -1,4 +1,4 @@
-import json
+import json, re
 
 from core.llm_chat import LLMChat
 from core.step_manager import Step
@@ -31,3 +31,10 @@ class Planner:
             step = Step(step_data["step_name"], step_data["step_description"])
             self.steps.append(step)
         return self.steps
+    
+    def extract_steps(plan_string):
+        # Define an empty list to store the steps
+        steps = []
+        # Extracting step descriptions
+        steps = re.findall(r"\d+\.\s(.*?)(?=\n\d+\.\s|\Z)", plan_string, re.DOTALL)
+        return steps
