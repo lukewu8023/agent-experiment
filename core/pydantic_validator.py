@@ -1,7 +1,7 @@
 from typing_extensions import Annotated
 from pydantic import BaseModel, ValidationError, AfterValidator, ValidationInfo
 
-class Validator:
+class PydanticValidator:
 
     CHECK_UNCERTAINTY = 1
     CHECK_NOT_ANSWERED = 2
