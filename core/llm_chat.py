@@ -13,7 +13,7 @@ from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_openai import ChatOpenAI
 
 from core.config import Config
-from core.validator import Validator
+from core.pydantic_validator import PydanticValidator
 from core.step_manager import Step
 
 from prompt.system_context import SYSTEM_CONTEXT, SYSTEM_CONTEXT_WITH_TOOLS
@@ -26,10 +26,12 @@ class LLMChat:
 
         if model_type == 'ADVANCED':
             model = Config.OPENAI_MODEL_ADVANCED
+        elif model_type == 'EXPERT':
+            model = Config.OPENAI_MODEL_EXPERT
         else:
             model = Config.OPENAI_MODEL_BASIC
 
-        self.chat = ChatOpenAI(model=model, temperature=0.1, max_tokens=4096, verbose=True)
+        self.chat = ChatOpenAI(model=model, temperature=0.1, verbose=True)
         self.chat_history_for_chain = ChatMessageHistory()
 
     def one_time_respond(self, request):
@@ -39,6 +41,23 @@ class LLMChat:
                     "system",
                     "You are a helpful assistant. Answer all questions to the best of your ability.",
                 ),
+                MessagesPlaceholder(variable_name="messages"),
+            ]
+        )
+        output_parser = StrOutputParser()
+        chain = prompt | self.chat | output_parser
+        response = chain.invoke(
+            {
+                "messages": [
+                    HumanMessage(content=request),
+                ],
+            }
+        )
+        return response
+
+    def one_time_respond_o1(self, request):
+        prompt = ChatPromptTemplate.from_messages(
+            [
                 MessagesPlaceholder(variable_name="messages"),
             ]
         )
