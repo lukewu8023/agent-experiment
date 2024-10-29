@@ -1,5 +1,6 @@
 from strategy.replan.node import Node
 
+# Not in used
 class Graph:
     def __init__(self):
         self.nodes = {}
