@@ -3,15 +3,17 @@ import json
 from core.step_manager import Step
 
 from prompt.plan import PLAN_FORMAT,RE_PLAN_FORMAT,LOW_LEVEL_PLANNER_FORMAT,REVIEW_FORMAT
+from core.llm_chat import LLMChat
+
 
 class Planner:
 
-    def __init__(self,chat):
+    def __init__(self,model_type=None):
         self.history_steps=[]
         self.steps = []
-        self.chat=chat
+        self.chat = LLMChat(model_type)
 
-    def plan(self, request, background="",knowledge=""):
+    def plan_with_template_format(self, request, background="",knowledge=""):
 
         if knowledge:
             knowledge=f"<knowledge>\n{knowledge}\n</knowledge>\n"

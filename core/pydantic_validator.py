@@ -1,7 +1,7 @@
 from typing_extensions import Annotated
 from pydantic import BaseModel, ValidationError, AfterValidator, ValidationInfo
 
-class Validator:
+class PydanticValidator:
 
     CHECK_UNCERTAINTY = 1
     CHECK_NOT_ANSWERED = 2
@@ -61,12 +61,3 @@ If yes, output string 'yes', if no or response contains further questions or ref
                 response: Annotated[str, AfterValidator(_arguments_not_match)]
 
         Response.model_validate({'response': response})
-
-
-
-
-
-class Validator(object):
-
-    def __init__():
-        pass

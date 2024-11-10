@@ -66,14 +66,3 @@ Command: {input}
 Thought:{agent_scratchpad}
 """
 
-
-VALIDATOR_PROMPT="""Your task is to design a validation task given query and response.
-You should output the detailed description in plain text of how to validate the given query.
-
-Query:
-{query}
-
-Response:
-{response}
-
-"""
