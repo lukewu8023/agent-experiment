@@ -1,4 +1,4 @@
-import json
+import json, re
 
 from core.step_manager import Step
 
@@ -80,3 +80,11 @@ class Planner:
 
         step.add_sub_steps(sub_steps)
         return step
+
+    
+    def extract_steps(plan_string):
+        # Define an empty list to store the steps
+        steps = []
+        # Extracting step descriptions
+        steps = re.findall(r"\d+\.\s(.*?)(?=\n\d+\.\s|\Z)", plan_string, re.DOTALL)
+        return steps

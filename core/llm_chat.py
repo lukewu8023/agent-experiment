@@ -15,6 +15,8 @@ from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage
 
 from core.config import Config
+from core.pydantic_validator import PydanticValidator
+from core.step_manager import Step
 
 from prompt.system_context import SYSTEM_CONTEXT, SYSTEM_CONTEXT_WITH_TOOLS
 
@@ -27,6 +29,8 @@ class LLMChat:
 
         if model_type == 'ADVANCED':
             model = Config.OPENAI_MODEL_ADVANCED
+        elif model_type == 'EXPERT':
+            model = Config.OPENAI_MODEL_EXPERT
         else:
             model = Config.OPENAI_MODEL_BASIC
 
@@ -49,6 +53,23 @@ class LLMChat:
                     "system",
                     "You are a helpful assistant. Answer all questions to the best of your ability.",
                 ),
+                MessagesPlaceholder(variable_name="messages"),
+            ]
+        )
+        output_parser = StrOutputParser()
+        chain = prompt | self.chat | output_parser
+        response = chain.invoke(
+            {
+                "messages": [
+                    HumanMessage(content=request),
+                ],
+            }
+        )
+        return response
+
+    def one_time_respond_o1(self, request):
+        prompt = ChatPromptTemplate.from_messages(
+            [
                 MessagesPlaceholder(variable_name="messages"),
             ]
         )

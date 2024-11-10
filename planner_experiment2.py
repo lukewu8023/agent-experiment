@@ -1,5 +1,3 @@
-import re
-
 from core.llm_chat import LLMChat
 from core.context_manager import ContextManager
 from core.planner import Planner
@@ -32,13 +30,6 @@ def run():
     response = chat.context_respond(context_manager.context_to_str(), request+CODE_GENERATION_PROMPT)
 
     return response
-
-def extract_steps(plan_string):
-    # Define an empty list to store the steps
-    steps = []
-    # Extracting step descriptions
-    steps = re.findall(r"\d+\.\s(.*?)(?=\n\d+\.\s|\Z)", plan_string, re.DOTALL)
-    return steps
 
 if __name__ == "__main__":
     run()
