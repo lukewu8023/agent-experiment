@@ -26,12 +26,12 @@ def run():
     #request = """modify code in app.py and static. add an input box on the page to accept user's name. after click button, the popup should display username and current time"""
 
 
-    planner = Planner(model_type = 'BASIC')
+    planner = Planner(model_type = 'ADVANCED')
 
     validator=Validator(model_type = 'ADVANCED')
 
     tools=[T.save_code_to_file,T.read_code_from_file,T.execute_command_line,T.write_code,T.modify_code]
-    react_chat=ReActBot(tools=tools,model_type = 'BASIC')
+    react_chat=ReActBot(tools=tools,model_type = 'ADVANCED')
 
     index=1
 
