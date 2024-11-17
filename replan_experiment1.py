@@ -6,32 +6,6 @@ from core.llm_validator import LLMValidator
 from prompt.coding import CODE_GENERATION_PROMPT
 from strategy.replan.replan import PlanGraph, Node
 
-# # Create a plan graph
-# plan_graph = PlanGraph()
-
-# # Create nodes
-# node_a = Node(
-#     id='A',
-#     task_description='Main Task',
-#     next_nodes=['B'],
-#     validation_threshold=0.8,
-#     max_attempts=3
-# )
-# node_b = Node(
-#     id='B',
-#     task_description='Subtask B',
-#     next_nodes=[],
-#     validation_threshold=0.8,
-#     max_attempts=3
-# )
-
-# # Add nodes to the plan
-# plan_graph.add_node(node_a)
-# plan_graph.add_node(node_b)
-
-# # Execute the plan
-# plan_graph.execute_plan()
-
 def run():
     print("Make a cake...")
 
