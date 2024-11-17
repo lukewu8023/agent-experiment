@@ -6,26 +6,6 @@ from pydantic import BaseModel, ValidationError, AfterValidator, ValidationInfo
 class LLMValidator:
 
     def create_validator_prompt(self, request, response):
-        # prompt = f"""
-        # You are an expert validator of AI-generated outputs. Evaluate the provided subtask output based on the following criteria: Accuracy, Completeness, Relevance, Coherence and Clarity, Consistency, Following Instructions, Error Analysis, and Ethical Compliance.
-
-        # For each criterion, provide:
-
-        # - **Pass/Fail**
-        # - **Justification:** A brief explanation for your decision.
-
-        # At the end, provide a final recommendation: **Accept Output** or **Rerun Subtask** based on the evaluations. If any critical criteria failed, recommend rerunning the subtask.
-
-        # ---
-
-        # **Subtask Description:**
-        # {request}
-
-        # **Subtask Output:**
-        # {response}
-
-        # **Evaluation:**
-        # """
 
         prompt = f"""
         You are an expert validator of AI-generated outputs. Evaluate the provided subtask output based on the following criteria:
@@ -82,9 +62,11 @@ class LLMValidator:
         total_score = 0
         lines = validation_response.strip().split('\n')
         for line in lines:
-            # match = re.match(r'\d+\.\s\*\*([A-Za-z\s]+)\*\*\s\(Score\s1-5\):\s*Score:\s*(\d)', line)
-            # match = re.match(r'\d+\.\s\*\*([A-Za-z\s]+) \(Score (\d+)\)', line)
-            match = re.match(r'\d+\.\s+\*\*([A-Za-z\s]+)\s*\(Score:? (\d+)\)\*\*', line)            
+            match_1 = re.match(r'\d+\.\s\*\*([A-Za-z\s]+)\*\*\s\(Score\s1-5\):\s*Score:\s*(\d)', line)
+            match_2 = re.match(r'\d+\.\s\*\*([A-Za-z\s]+) \(Score (\d+)\)', line)
+            match_3 = re.match(r'\d+\.\s+\*\*([A-Za-z\s]+)\s*\(Score:? (\d+)\)\*\*', line)  
+            match_4 = re.match(r'\d+\.\s+\*\*([A-Za-z\s]+)\*\* \(Score (\d+)\):', line)  
+            match = match_1 or match_2 or match_3 or match_4
             if match:
                 criterion = match.group(1).strip()
                 score = int(match.group(2))
@@ -120,10 +102,6 @@ if __name__ == "__main__":
     llm_validator = LLMValidator()
     validation_result = llm_validator.validate(subtask_description, subtask_output)
     print(validation_result)
-
-    # Continuing from previous code
-    # decision = llm_validator.parse_validation_response(validation_result)
-    # print("\nFinal Decision:", decision)
 
     # Continuing from previous code
     decision, total_score, scores = llm_validator.parse_scored_validation_response(validation_result)
