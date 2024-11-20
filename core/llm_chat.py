@@ -1,5 +1,6 @@
 import json
-from typing import Dict, Any
+from typing import Dict, Any,List,Union
+import re
 
 from langchain_core.documents import Document
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
@@ -11,6 +12,7 @@ from langchain_community.chat_message_histories import ChatMessageHistory
 from langchain.globals import set_debug
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_openai import ChatOpenAI
+from langchain_core.messages import HumanMessage
 
 from core.config import Config
 from core.pydantic_validator import PydanticValidator
@@ -20,9 +22,10 @@ from prompt.system_context import SYSTEM_CONTEXT, SYSTEM_CONTEXT_WITH_TOOLS
 
 set_debug(True)
 
+
 class LLMChat:
 
-    def __init__(self, model_type = 'BASIC'):
+    def __init__(self, model_type = 'BASIC',validator=None):
 
         if model_type == 'ADVANCED':
             model = Config.OPENAI_MODEL_ADVANCED
@@ -31,8 +34,17 @@ class LLMChat:
         else:
             model = Config.OPENAI_MODEL_BASIC
 
-        self.chat = ChatOpenAI(model=model, temperature=0.1, verbose=True)
+        self.chat = ChatOpenAI(model=model, temperature=0.1,verbose=True)
         self.chat_history_for_chain = ChatMessageHistory()
+
+        self.validator=validator
+
+    def one_time_respond_str(self, prompt):
+ 
+        output_parser = StrOutputParser()
+        chain = self.chat | output_parser
+        response = chain.invoke(prompt)
+        return response
 
     def one_time_respond(self, request):
         prompt = ChatPromptTemplate.from_messages(
@@ -200,7 +212,6 @@ class LLMChat:
                     "messages": messages,
                 }
             )
-            validator = Validator()
             try:
                 try:
                     answer_data = json.loads(result['answer'])
@@ -218,7 +229,7 @@ class LLMChat:
                     input_args = arguments
                     print(f"arg_definition: {arg_definition}")
                     print(f"input_args: {input_args}")
-                    # validator.validate(input_args, arg_definition, validator.ARGUMENTS_NOT_MATCH) #TODO
+                    # self.validator.validate(input_args, arg_definition, validator.ARGUMENTS_NOT_MATCH) #TODO
                     if not self._validate_arguments(input_args,arg_definition):
                         message_str = messages[0]
                         input_args_str = json.dumps(input_args)
@@ -272,9 +283,8 @@ class LLMChat:
                     ],
                 }
             )
-            validator = Validator()
             try:
-                validator.validate(request, response, validator.CHECK_UNCERTAINTY)
+                self.validator.validate(request, response, self.validator.CHECK_UNCERTAINTY)
                 return response
             except ValueError as error:
                 attempt += 1

@@ -2,7 +2,7 @@ class ContextManager:
 
     def __init__(self):
         self.context = {}
-
+        
     def get_context(self):
         return self.context
 
@@ -30,4 +30,4 @@ class ContextManager:
 
     def print_context(self):
         print(f"Here is the context:")
-        print(self.contextToString())
+        print(self.context_to_str())

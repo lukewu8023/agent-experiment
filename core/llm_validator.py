@@ -1,13 +1,21 @@
+import json
+from typing import List,Union
 import re
 
-from typing_extensions import Annotated
-from pydantic import BaseModel, ValidationError, AfterValidator, ValidationInfo
 
-class LLMValidator:
+from core.llm_chat import LLMChat
 
-    def create_validator_prompt(self, request, response):
 
-        prompt = f"""
+
+class Validator(object):
+
+    def __init__(self,model_type = 'BASIC',tools=[]):
+
+        self.chat = LLMChat(model_type)
+
+
+    def create_validator_prompt(self,request,response):
+        prompt=f"""
         You are an expert validator of AI-generated outputs. Evaluate the provided subtask output based on the following criteria:
 
         1. **Accuracy** (Score 1-5): The output fulfills the requirements of the subtask accurately.
@@ -24,15 +32,20 @@ class LLMValidator:
         - **Score (1-5)**
         - **Justification:** A brief explanation for your score.
 
+        in following example:
+        1. **Accuracy (Score 5)**: The output correctly completed the task.
+
         At the end:
 
         - Calculate the **Total Score**.
-        - Provide a final recommendation:
+        - Provide a **Final Recommendation:**
 
         - **Accept Output** if the total score is above 35 and no criterion scored below 3.
         - **Rerun Subtask** if the total score is 35 or below, or if any criterion scored below 3.
 
-        - If recommending a rerun, provide suggestions on how to improve the output.
+        - If recommending a rerun, in **Suggestions** provide suggestions on how to improve the output.
+
+        You must follow the output format! Don't add additional symbol in section keys.
 
         ---
 
@@ -57,6 +70,7 @@ class LLMValidator:
         else:
             return "Undetermined"
         
+    
     def parse_scored_validation_response(self, validation_response):
         scores = []
         total_score = 0
@@ -82,18 +96,22 @@ class LLMValidator:
         else:
             decision = "Rerun Subtask"
 
-        return decision, total_score, scores
+        # Final Recommendation
+        m=re.search(r"\*\*suggestions\*\*:?",validation_response.lower())
+        if m:
+            suggestions=validation_response[m.start():]
+        else:
+            suggestions=""
 
+        return decision, total_score, scores,suggestions
+    
     def validate(self, request, response):
         prompt = self.create_validator_prompt(request, response)
         
-        from core.llm_chat import LLMChat
-        chat = LLMChat()
-
-        validation_response = chat.one_time_respond(prompt)
+        validation_response = self.chat.one_time_respond(prompt)
         
-        # validation_response = check_result['choices'][0]['message']['content']
         return validation_response
+        
 
 # Example usage
 if __name__ == "__main__":
