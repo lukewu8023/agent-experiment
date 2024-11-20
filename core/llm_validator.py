@@ -15,7 +15,8 @@ class Validator(object):
 
 
     def create_validator_prompt(self,request,response):
-        prompt=f"""You are an expert validator of AI-generated outputs. Evaluate the provided subtask output based on the following criteria:
+        prompt=f"""
+        You are an expert validator of AI-generated outputs. Evaluate the provided subtask output based on the following criteria:
 
         1. **Accuracy** (Score 1-5): The output fulfills the requirements of the subtask accurately.
         2. **Completeness** (Score 1-5): The output addresses all aspects of the subtask.
@@ -75,9 +76,11 @@ class Validator(object):
         total_score = 0
         lines = validation_response.strip().split('\n')
         for line in lines:
-            # match = re.match(r'\d+\.\s\*\*([A-Za-z\s]+)\*\*\s\(Score\s1-5\):\s*Score:\s*(\d)', line)
-            # match = re.match(r'\d+\.\s\*\*([A-Za-z\s]+) \(Score (\d+)\)', line)
-            match = re.match(r'\d+\.\s+\*\*([A-Za-z\s]+)\s*\(Score:? (\d+)\)\*\*', line)            
+            match_1 = re.match(r'\d+\.\s\*\*([A-Za-z\s]+)\*\*\s\(Score\s1-5\):\s*Score:\s*(\d)', line)
+            match_2 = re.match(r'\d+\.\s\*\*([A-Za-z\s]+) \(Score (\d+)\)', line)
+            match_3 = re.match(r'\d+\.\s+\*\*([A-Za-z\s]+)\s*\(Score:? (\d+)\)\*\*', line)  
+            match_4 = re.match(r'\d+\.\s+\*\*([A-Za-z\s]+)\*\* \(Score (\d+)\):', line)  
+            match = match_1 or match_2 or match_3 or match_4
             if match:
                 criterion = match.group(1).strip()
                 score = int(match.group(2))
@@ -110,3 +113,16 @@ class Validator(object):
         return validation_response
         
 
+# Example usage
+if __name__ == "__main__":
+    subtask_description = "Translate the following English text into French: 'The quick brown fox jumps over the lazy dog.'"
+    subtask_output = "Le rapide renard brun saute par-dessus le chien paresseux."
+    llm_validator = LLMValidator()
+    validation_result = llm_validator.validate(subtask_description, subtask_output)
+    print(validation_result)
+
+    # Continuing from previous code
+    decision, total_score, scores = llm_validator.parse_scored_validation_response(validation_result)
+    print("\nTotal Score:", total_score)
+    print("Scores by Criterion:", scores)
+    print("Final Decision:", decision)
