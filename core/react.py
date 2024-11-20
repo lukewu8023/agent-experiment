@@ -21,7 +21,7 @@ class ReActBot(object):
         else:
             model = Config.OPENAI_MODEL_BASIC
 
-        self.chat = ChatOpenAI(model=model, temperature=0.1, max_tokens=4096,verbose=True)
+        self.chat = ChatOpenAI(model=model, temperature=0.1, verbose=True)
 
         self.stop=[
             f"\nObservation:",
